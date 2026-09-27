@@ -15,6 +15,7 @@ import isNil from 'lodash/isNil.js'
 import * as client from 'openid-client'
 import { PrismaService } from '../prisma.service.js'
 import { RedisService } from '../redis/redis.service.js'
+import { readSecret, UtilsService } from '../utils.service.js'
 import { CreateAuthDto } from './dto/create-auth.dto.js'
 import { UpdateAuthDto } from './dto/update-auth.dto.js'
 
@@ -27,6 +28,7 @@ export class AuthController implements OnModuleInit {
         private readonly redisService: RedisService,
         private readonly jwtService: JwtService,
         private readonly prismaService: PrismaService,
+        private readonly utilsService: UtilsService,
         private readonly configService: ConfigService
     ) {}
 
@@ -40,9 +42,7 @@ export class AuthController implements OnModuleInit {
         ) as string
         // Client identifier at the Authorization Server
 
-        let clientSecret: string = this.configService.get<string>(
-            'KEYCLOAK_SECRET'
-        ) as string
+        let clientSecret: string = readSecret('keycloak_secret') as string
         // Client Secret
 
         this.oidcClient = await client.discovery(
@@ -194,19 +194,21 @@ export class AuthController implements OnModuleInit {
             })
         })
 
-        const cookieName = 'connect.sid'
+        try {
+            const cookie = this.utilsService.getCookieFromRequest(req)
 
-        const cookie = get(req.cookies, cookieName)
+            if (cookie) {
+                const redisKey =
+                    this.utilsService.getRedisSessionNameFromCookie(cookie)
 
-        if (cookie) {
-            const sessionId = cookie?.replace(/^s:/, '')?.split('.')?.[0]
-            const redisKey = `sess:${sessionId}`
+                await this.redisService.redis.del(redisKey)
 
-            await this.redisService.redis.del(redisKey)
-
-            res.clearCookie(cookieName, {
-                path: '/',
-            })
+                res.clearCookie('connect.sid', {
+                    path: '/',
+                })
+            }
+        } catch (error) {
+            console.warn('no cookie to delete')
         }
 
         return {

@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import session from 'express-session'
 import { createClient } from 'redis'
 import { AppModule } from './app.module.js'
+import { readSecret } from './utils.service.js'
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
@@ -19,7 +20,7 @@ async function bootstrap() {
 
     // Initialize client.
     let redisClient = createClient({
-        url: 'redis://default:yourpassword@127.0.0.1:6379/0',
+        url: `redis://default:${readSecret('redis_password')}@127.0.0.1:6379/0`,
     })
 
     redisClient.connect().catch(console.error)
@@ -30,7 +31,7 @@ async function bootstrap() {
                 client: redisClient,
                 prefix: 'sess:',
             }),
-            secret: 'my-secret',
+            secret: readSecret('session_secret') as string,
             resave: false,
             saveUninitialized: false,
             rolling: true,

@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { Redis } from 'ioredis'
+import { readSecret } from '../utils.service.js'
 
 @Injectable()
 export class RedisService implements OnModuleInit {
@@ -10,7 +11,7 @@ export class RedisService implements OnModuleInit {
             port: 6379, // Redis port
             host: '127.0.0.1', // Redis host
             username: 'default', // needs Redis >= 6
-            password: 'yourpassword',
+            password: readSecret('redis_password') as string,
             db: 0, // Defaults to 0
         })
     }
