@@ -34,7 +34,7 @@ export class AuthController implements OnModuleInit {
 
     async initOIDC() {
         let server: URL = new URL(
-            `${this.configService.get<string>('KEYCLOAK_URL')}/realms/master`
+            `${this.configService.get<string>('KEYCLOAK_URL')}/realms/${this.configService.get<string>('KEYCLOAK_REALMS')}`
         ) // Authorization Server's Issuer Identifier
 
         let clientId: string = this.configService.get<string>(
@@ -178,7 +178,7 @@ export class AuthController implements OnModuleInit {
         }
 
         const logoutUrl = new URL(
-            `${this.configService.get<string>('KEYCLOAK_URL')}/realms/master/protocol/openid-connect/logout`
+            `${this.configService.get<string>('KEYCLOAK_URL')}/realms/${this.configService.get<string>('KEYCLOAK_REALMS')}/protocol/openid-connect/logout`
         )
 
         logoutUrl.searchParams.set('id_token_hint', idToken)
